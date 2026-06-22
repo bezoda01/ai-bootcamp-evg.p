@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "authservice-qa": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["tools/authservice_qa_mcp/launcher.py"],
+      "env": {
+        "ALLOWED_CONTAINERS": "auth-service",
+        "MAX_LOG_LINES": "500",
+        "QUERY_MAX_ROWS": "100",
+        "QUERY_TIMEOUT_SECONDS": "5",
+        "TEST_DB_TYPE": "sqlite",
+        "TEST_DB_PATH": "database.sqlite"
+      }
+    }
+  }
+}

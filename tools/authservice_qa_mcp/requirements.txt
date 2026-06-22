@@ -1,0 +1,4 @@
+mcp>=1.0.0
+
+# Optional only when TEST_DB_TYPE=postgres:
+# psycopg[binary]>=3.1
