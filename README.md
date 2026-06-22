@@ -1,6 +1,6 @@
 # AuthService QA Skill and MCP Server
 
-This folder contains the portable Skill and MCP server files that should be copied or pushed into the root of the `ai-bootcamp-2` AuthService training application.
+This folder contains a portable Skill and MCP server for the `ai-bootcamp-2` AuthService training application.
 
 The MCP server gives an AI coding agent two tools:
 
@@ -13,9 +13,7 @@ The packaged Skill explains when and how an agent should use these tools while d
 
 ```text
 .mcp.json
-.codex/config.toml
-.agents/skills/authservice-debug/SKILL.md
-.claude/skills/authservice-debug/SKILL.md
+skills/authservice-debug/SKILL.md
 tools/authservice_qa_mcp/
   __init__.py
   config.py
@@ -36,7 +34,7 @@ Not included on purpose:
 - `.venv/`
 - `__pycache__/`
 - `.pyc` files
-- local Claude settings such as `.claude/settings.local.json`
+- local editor or agent settings
 - database or log files
 
 ## Minimal Requirements
@@ -70,14 +68,14 @@ After copying, the repository root should contain:
 ```text
 ai-bootcamp-2/
   .mcp.json
-  .codex/
-  .agents/
-  .claude/
+  skills/
   tools/
   docker-compose.yml
   package.json
   src/
 ```
+
+If your agent runtime expects project skills in a different folder, copy `skills/authservice-debug` into that runtime's project skill directory. The Skill itself is runtime-neutral.
 
 ## Quick Start On Windows PowerShell
 
@@ -123,6 +121,7 @@ auth-service
 
 ```powershell
 $env:PYTHONPATH = "tools"
+$env:PYTHONDONTWRITEBYTECODE = "1"
 python -m unittest discover -s tools/authservice_qa_mcp/tests -v
 ```
 
@@ -158,7 +157,7 @@ print(get_logs("auth-service", 5, {"auth-service"}))
 
 ## MCP Configuration
 
-The Claude Code config is `.mcp.json`:
+The included `.mcp.json` defines a stdio MCP server:
 
 ```json
 {
@@ -180,8 +179,6 @@ The Claude Code config is `.mcp.json`:
 }
 ```
 
-The Codex config is `.codex/config.toml` and points to the same launcher.
-
 The launcher is intentionally repo-relative:
 
 ```text
@@ -194,13 +191,37 @@ This avoids hard-coded local paths such as:
 C:\Users\...\tools\.venv\Scripts\python.exe
 ```
 
-## Skill Locations
+## Optional Claude CLI Setup
 
-Two copies are included because different agent runtimes discover project skills in different folders:
+Claude Code can use MCP servers from a project `.mcp.json` file. If you are running Claude CLI from the repository root, keep the included `.mcp.json` in the root and restart/reload the CLI session.
+
+If you prefer to register the server through the CLI command instead, run this from the repository root:
+
+```powershell
+claude mcp add --transport stdio `
+  --env ALLOWED_CONTAINERS=auth-service `
+  --env MAX_LOG_LINES=500 `
+  --env QUERY_MAX_ROWS=100 `
+  --env QUERY_TIMEOUT_SECONDS=5 `
+  --env TEST_DB_TYPE=sqlite `
+  --env TEST_DB_PATH=database.sqlite `
+  authservice-qa -- python tools/authservice_qa_mcp/launcher.py
+```
+
+Then verify that Claude sees the server:
+
+```powershell
+claude mcp list
+```
+
+For stdio MCP servers, keep the `--` before `python`; it separates Claude CLI options from the command that starts the MCP server.
+
+## Skill Location
+
+The runtime-neutral Skill is included here:
 
 ```text
-.claude/skills/authservice-debug/SKILL.md
-.agents/skills/authservice-debug/SKILL.md
+skills/authservice-debug/SKILL.md
 ```
 
 The Skill tells the agent to:
@@ -250,10 +271,11 @@ Behavior:
 
 ## Environment Variables
 
-The default values are already set in `.mcp.json` and `.codex/config.toml`.
+The default values are already set in `.mcp.json`.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `PROJECT_DIR` | current working directory | Repository root used to resolve relative DB paths. |
 | `ALLOWED_CONTAINERS` | `auth-service` | Comma-separated allowlist for Docker access. |
 | `MAX_LOG_LINES` | `500` | Maximum allowed `lines` value for logs. |
 | `QUERY_MAX_ROWS` | `100` | Maximum returned DB rows. |
@@ -350,6 +372,7 @@ From the repository root:
 ```powershell
 python -m pip install -r tools/authservice_qa_mcp/requirements.txt
 $env:PYTHONPATH = "tools"
+$env:PYTHONDONTWRITEBYTECODE = "1"
 python -m unittest discover -s tools/authservice_qa_mcp/tests -v
 python -m compileall -q tools/authservice_qa_mcp
 ```
@@ -361,4 +384,4 @@ docker compose up -d --build
 docker ps --format "{{.Names}}"
 ```
 
-The MCP server should be ready for an agent after the editor/agent reloads its MCP configuration.
+The MCP server should be ready after the agent runtime reloads its MCP configuration.

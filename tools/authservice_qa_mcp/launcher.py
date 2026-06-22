@@ -20,7 +20,7 @@ def main() -> None:
     project_dir = tools_dir.parent
 
     sys.path.insert(0, str(tools_dir))
-    os.environ.setdefault("CLAUDE_PROJECT_DIR", str(project_dir))
+    os.environ.setdefault("PROJECT_DIR", str(project_dir))
 
     try:
         from authservice_qa_mcp.server import main as server_main

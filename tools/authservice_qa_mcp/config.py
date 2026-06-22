@@ -52,7 +52,7 @@ class Settings:
 
 
 def load_settings() -> Settings:
-    project_dir = Path(os.getenv("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
+    project_dir = Path(os.getenv("PROJECT_DIR") or os.getcwd()).resolve()
 
     test_db_type = (os.getenv("TEST_DB_TYPE") or "sqlite").strip().lower()
     if test_db_type not in {"sqlite", "sqlite-container", "postgres"}:

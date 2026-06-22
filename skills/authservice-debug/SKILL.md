@@ -1,9 +1,6 @@
 ---
 name: authservice-debug
 description: Debug this AuthService training app by using the local authservice-qa MCP server to read Docker logs and run read-only SELECT queries against the test database. Use when investigating login failures, unexpected HTTP statuses, blocked users, invalid credentials, or log/database mismatches.
-allowed-tools:
-  - mcp__authservice-qa__get_container_logs
-  - mcp__authservice-qa__query_test_db
 ---
 
 # AuthService Debug Skill

@@ -38,7 +38,7 @@ def query_test_db(sql_query: str) -> dict[str, Any]:
     """Execute a read-only SELECT query against the configured test database.
 
     Supports:
-    - TEST_DB_TYPE=sqlite with TEST_DB_PATH, default database.sqlite under CLAUDE_PROJECT_DIR
+    - TEST_DB_TYPE=sqlite with TEST_DB_PATH, default database.sqlite under PROJECT_DIR
     - TEST_DB_TYPE=sqlite-container with SQLITE_CONTAINER_NAME and SQLITE_CONTAINER_PATH
     - TEST_DB_TYPE=postgres with POSTGRES_DSN
 
