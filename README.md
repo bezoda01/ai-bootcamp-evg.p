@@ -168,7 +168,7 @@ print(get_logs("auth-service", 5, {"auth-service"}))
 
 ## API Smoke Checks Are Not MCP Tools
 
-The task asks for two MCP tools only: `get_container_logs` and `query_test_db`.
+This MCP server exposes two diagnostic tools: `get_container_logs` and `query_test_db`.
 
 API checks are still useful because they prove the application behavior that the MCP tools are meant to diagnose. Run them as normal HTTP checks against the application, then use the MCP tools to inspect logs and database state.
 
