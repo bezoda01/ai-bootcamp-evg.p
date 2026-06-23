@@ -17,7 +17,10 @@ The project config starts the server through `tools/authservice_qa_mcp/launcher.
 
 ## Workflow
 
-1. Reproduce or identify the failing API case: email, password, endpoint, expected status, actual status.
+1. Reproduce or identify the failing API case with the normal application interface, not with a separate MCP tool.
+   - Check `GET /health` to confirm the service is reachable.
+   - Check `POST /login` with the reported email/password to capture actual status code and response body.
+   - Use existing project scripts, HTTP clients, or manual requests. Do not add an API-call MCP tool unless the task explicitly asks for it.
 2. Inspect logs with `get_container_logs(container_name, lines)`.
    - Default container/service name is `auth-service`.
    - Start with 100-200 lines unless the user asks for more.

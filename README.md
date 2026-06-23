@@ -26,6 +26,7 @@ tools/authservice_qa_mcp/
   tests/
     test_docker_tools.py
     test_mcp_configuration.py
+    test_mcp_stdio_integration.py
     test_safety.py
 ```
 
@@ -131,7 +132,17 @@ Expected result:
 OK
 ```
 
-7. Optional: run a direct database smoke test:
+7. Optional: run only the mocked MCP stdio integration test:
+
+```powershell
+$env:PYTHONPATH = "tools"
+$env:PYTHONDONTWRITEBYTECODE = "1"
+python -m unittest tools.authservice_qa_mcp.tests.test_mcp_stdio_integration -v
+```
+
+This starts the MCP server through `tools/authservice_qa_mcp/launcher.py`, lists available tools through an MCP client, and calls both `get_container_logs` and `query_test_db`. It uses mocks, so Docker and `database.sqlite` do not need to be available for this specific test.
+
+8. Optional: run a direct database smoke test:
 
 ```powershell
 $env:PYTHONPATH = "tools"
@@ -144,7 +155,7 @@ print(query_test_db("SELECT id, email, status FROM users ORDER BY id LIMIT 3", s
 '@ | python -
 ```
 
-8. Optional: run a direct Docker logs smoke test:
+9. Optional: run a direct Docker logs smoke test:
 
 ```powershell
 $env:PYTHONPATH = "tools"
@@ -154,6 +165,85 @@ from authservice_qa_mcp.docker_tools import get_logs
 print(get_logs("auth-service", 5, {"auth-service"}))
 '@ | python -
 ```
+
+## API Smoke Checks Are Not MCP Tools
+
+The task asks for two MCP tools only: `get_container_logs` and `query_test_db`.
+
+API checks are still useful because they prove the application behavior that the MCP tools are meant to diagnose. Run them as normal HTTP checks against the application, then use the MCP tools to inspect logs and database state.
+
+Health check:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/health"
+```
+
+Successful login check:
+
+```powershell
+$body = @{
+  email = "test@test.com"
+  password = "password123"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:3000/login" `
+  -ContentType "application/json" `
+  -Body $body
+```
+
+Blocked user check:
+
+```powershell
+$body = @{
+  email = "blocked@test.com"
+  password = "password123"
+} | ConvertTo-Json
+
+try {
+  Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://localhost:3000/login" `
+    -ContentType "application/json" `
+    -Body $body
+} catch {
+  $_.Exception.Response.StatusCode.value__
+}
+```
+
+Expected high-level flow:
+
+1. Use API smoke checks to reproduce the status code and response body.
+2. Use `get_container_logs` to see the server-side event/reason.
+3. Use `query_test_db` to verify `users.status` and related test data.
+4. Compare API response, logs, and DB state before reporting the root cause.
+
+## MCP Integration Test With Mocks
+
+The mocked integration test verifies the MCP server interface itself:
+
+- starts the stdio MCP server through `tools/authservice_qa_mcp/launcher.py`;
+- calls `list_tools` and expects exactly `get_container_logs` and `query_test_db`;
+- calls `get_container_logs` without requiring Docker;
+- calls `query_test_db` without requiring a real SQLite file;
+- still validates tool arguments such as log line count and SQL shape.
+
+Run it with:
+
+```powershell
+$env:PYTHONPATH = "tools"
+$env:PYTHONDONTWRITEBYTECODE = "1"
+python -m unittest tools.authservice_qa_mcp.tests.test_mcp_stdio_integration -v
+```
+
+The test enables mocks through:
+
+```text
+AUTHSERVICE_QA_MCP_TEST_MODE=1
+```
+
+Do not set this variable for normal agent usage. It is only for automated MCP interface tests.
 
 ## MCP Configuration
 

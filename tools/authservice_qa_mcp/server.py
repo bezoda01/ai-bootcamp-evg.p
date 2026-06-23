@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from typing import Any
 
@@ -9,13 +10,17 @@ from mcp.server.fastmcp import FastMCP
 from .config import load_settings
 from .db_tools import query_test_db as run_query_test_db
 from .docker_tools import get_logs
-from .safety import validate_lines
+from .safety import normalize_select_sql, validate_lines
 
 # Stdio MCP servers must not write logs to stdout because stdout carries JSON-RPC.
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 logger = logging.getLogger("authservice_qa_mcp")
 
 mcp = FastMCP("authservice-qa")
+
+
+def _test_mode_enabled() -> bool:
+    return os.getenv("AUTHSERVICE_QA_MCP_TEST_MODE") == "1"
 
 
 @mcp.tool()
@@ -30,6 +35,16 @@ def get_container_logs(container_name: str, lines: int) -> dict[str, Any]:
     """
     settings = load_settings()
     tail = validate_lines(lines, settings.max_log_lines)
+
+    if _test_mode_enabled():
+        return {
+            "requested_container": container_name,
+            "resolved_container": container_name,
+            "lines_requested": tail,
+            "lines_returned": tail,
+            "logs": [f"mock log line {number + 1}" for number in range(tail)],
+        }
+
     return get_logs(container_name, tail, settings.allowed_containers)
 
 
@@ -46,6 +61,20 @@ def query_test_db(sql_query: str) -> dict[str, Any]:
     connection is opened in read-only mode where possible.
     """
     settings = load_settings()
+    sql = normalize_select_sql(sql_query, settings.max_sql_length)
+
+    if _test_mode_enabled():
+        return {
+            "database_type": "mock",
+            "database": "mock test database",
+            "columns": ["email", "status"],
+            "rows": [{"email": "test@test.com", "status": "active"}],
+            "row_count": 1,
+            "truncated": False,
+            "max_rows": settings.query_max_rows,
+            "sql": sql,
+        }
+
     return run_query_test_db(sql_query, settings)
 
 
